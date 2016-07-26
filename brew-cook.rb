@@ -127,7 +127,10 @@ module Homebrew
   def self.cook
     noop = ARGV.delete("-n") # FIX: real processing
 
-    path =  ARGV.first || "Brewfile"
+    path = ARGV.first || File.expand_path("~/.brew_manifest")
+
+    abort "Please supply a Brewfile path or make a ~/.brew_manifest" unless path
+
     manifest = Manifest.new noop
     manifest.instance_eval File.read(path), path
     manifest.execute
