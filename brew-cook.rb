@@ -39,6 +39,12 @@ module Homebrew
       casks << name
     end
 
+    def host *names
+      if names.include? `hostname -s`.chomp then
+        yield
+      end
+    end
+
     def leaves
       installed = Formula.installed
 
