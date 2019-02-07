@@ -45,7 +45,7 @@ module Homebrew
       end
     end
 
-    def leaves
+    def leaves manifest
       installed = Formula.installed
 
       deps_of_installed = Set.new
@@ -60,6 +60,8 @@ module Homebrew
           end
         }.compact
       end
+
+      deps_of_installed.subtract manifest
 
       installed - deps_of_installed.to_a
     end
@@ -95,7 +97,7 @@ module Homebrew
 
       all = Formula.installed
 
-      leaves = self.leaves
+      leaves = self.leaves manifest
 
       extra    = leaves - manifest
       missing  = manifest - leaves
