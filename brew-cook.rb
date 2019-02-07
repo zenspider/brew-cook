@@ -52,7 +52,7 @@ module Homebrew
 
       installed.each do |f|
         deps_of_installed.merge f.deps.map { |dep|
-          if dep.optional? || dep.recommended?
+          if dep.optional? || dep.recommended? || dep.build?
             tab = Tab.for_formula f
             dep.to_formula if tab.with?(dep)
           else
@@ -121,7 +121,7 @@ module Homebrew
 
       missing.each do |dep|
         # TODO? Bundle::BrewInstaller.install dep.full_name, flags[dep.full_name]
-        args = flags[dep.full_name].map { |arg| "--#{arg}" }
+        args = (flags[dep.full_name] || []).map { |arg| "--#{arg}" }
         cmd = "brew install #{dep} #{args.join " "}"
         if noop then
           puts cmd
