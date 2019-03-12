@@ -18,13 +18,14 @@ require "cmd/deps"
 
 module Homebrew
   class Manifest
-    attr_accessor :taps, :formulas, :casks, :noop
+    attr_accessor :taps, :formulas, :casks, :noop, :verbose
 
     def initialize noop = false
       self.taps     = []
       self.formulas = []
       self.casks    = []
       self.noop     = noop
+      self.verbose  = false
     end
 
     def tap s
@@ -54,6 +55,11 @@ module Homebrew
         deps_of_installed.merge f.deps.map { |dep|
           if dep.optional? || dep.recommended? || dep.build?
             tab = Tab.for_formula f
+
+            if verbose && tab.with?(dep) then
+              p f.name => dep.name
+            end
+
             dep.to_formula if tab.with?(dep)
           else
             dep.to_formula
@@ -79,8 +85,13 @@ module Homebrew
     def deps_for fs
       fs.flat_map { |f|
         f.recursive_dependencies do |dependent, dep|
-          if dep.optional? || dep.recommended?
+          if dep.optional? || dep.recommended? || dep.build?
             tab = Tab.for_formula dependent
+
+            if verbose && tab.with?(dep) then
+              p f.name => dep.name
+            end
+
             Dependency.prune unless tab.with?(dep)
           elsif dep.build?
             Dependency.prune
@@ -99,6 +110,8 @@ module Homebrew
 
       leaves = self.leaves manifest
 
+      deps = all - leaves
+
       extra    = leaves - manifest
       missing  = manifest - leaves
 
@@ -107,8 +120,31 @@ module Homebrew
       deps_cur = deps_for(leaves)
       deps_new = deps_for(leaves-extra)
 
-      # deps_add = deps_new - deps_cur
+      deps_add = deps_new - deps_cur
       deps_rm  = deps_cur - deps_new
+
+      if verbose then
+        pp :installed
+        pp all.map(&:name)
+        puts
+        pp :leaves
+        pp leaves.map(&:name)
+        puts
+        pp :manifest
+        pp manifest.map(&:name)
+        puts
+        pp :deps
+        pp deps.map(&:name)
+        puts
+        pp :extra
+        pp extra.map(&:name)
+        puts
+        pp :missing
+        pp missing.map(&:name)
+        puts
+        pp :add?
+        pp deps_add.map(&:name)
+      end
 
       (extra + deps_rm).each do |dep|
         cmd = "brew rm #{dep}"
@@ -134,12 +170,14 @@ module Homebrew
 
   def self.cook
     noop = ARGV.delete("-n") # FIX: real processing
+    verbose = ARGV.delete("-v")
 
     path = ARGV.first || File.expand_path("~/.brew_manifest")
 
     abort "Please supply a Brewfile path or make a ~/.brew_manifest" unless path
 
     manifest = Manifest.new noop
+    manifest.verbose = verbose if verbose
     manifest.instance_eval File.read(path), path
     manifest.execute
   end
