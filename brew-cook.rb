@@ -15,6 +15,7 @@
 require "formula"
 require "tab"
 require "cmd/deps"
+require "cask/all"
 
 module Homebrew
   class Manifest
@@ -100,13 +101,42 @@ module Homebrew
       }.uniq
     end
 
+    def run cmd
+      if noop then
+        puts cmd
+      else
+        system cmd
+      end
+    end
+
+    def capture_io
+      # stolen from minitest
+      require "stringio"
+      captured_stdout, captured_stderr = StringIO.new, StringIO.new
+
+      orig_stdout, orig_stderr = $stdout, $stderr
+      $stdout, $stderr         = captured_stdout, captured_stderr
+
+      yield
+
+      return captured_stdout.string, captured_stderr.string
+    ensure
+      $stdout = orig_stdout
+      $stderr = orig_stderr
+    end
+
     def execute
-      # TODO: handle taps
-      # TODO: handle casks
       $-w = nil # HACK
       manifest = lookup_formula
 
       all = Formula.installed
+
+      installed_casks = nil
+      capture_io do # STFU -- complaining about handbrakecli calling license
+        installed_casks = Cask::Caskroom.casks.map(&:token)
+      end
+
+      installed_taps = Tap.names
 
       leaves = self.leaves manifest
 
@@ -122,6 +152,12 @@ module Homebrew
 
       deps_add = deps_new - deps_cur
       deps_rm  = deps_cur - deps_new
+
+      casks_add = casks - installed_casks
+      casks_del = installed_casks - casks
+
+      taps_add = taps - installed_taps
+      taps_del = installed_taps - taps
 
       if verbose then
         pp :installed
@@ -144,26 +180,54 @@ module Homebrew
         puts
         pp :add?
         pp deps_add.map(&:name)
+
+        puts
+        pp :casks
+        puts
+        pp :add
+        pp casks_add
+        pp :del
+        pp casks_del
+
+        puts
+        pp :taps
+        puts
+        pp :add
+        pp taps_add
+        pp :del
+        pp taps_del
       end
 
       (extra + deps_rm).each do |dep|
         cmd = "brew rm #{dep}"
-        if noop then
-          puts cmd
-        else
-          system cmd
-        end
+        run cmd
       end
 
       missing.each do |dep|
         # TODO? Bundle::BrewInstaller.install dep.full_name, flags[dep.full_name]
         args = (flags[dep.full_name] || []).map { |arg| "--#{arg}" }
         cmd = "brew install #{dep} #{args.join " "}"
-        if noop then
-          puts cmd
-        else
-          system cmd
-        end
+        run cmd
+      end
+
+      casks_add.each do |cask|
+        cmd = "brew cask install #{cask}"
+        run cmd
+      end
+
+      casks_del.each do |cask|
+        cmd = "brew cask uninstall #{cask}"
+        run cmd
+      end
+
+      taps_add.each do |tap|
+        cmd = "brew tap #{tap}"
+        run cmd
+      end
+
+      taps_del.each do |tap|
+        cmd = "brew untap #{tap}"
+        run cmd
       end
     end
   end
@@ -171,6 +235,8 @@ module Homebrew
   def self.cook
     noop = ARGV.delete("-n") # FIX: real processing
     verbose = ARGV.delete("-v")
+
+    ENV["HOMEBREW_DEBUG"]="1" if ARGV.delete("--debug")
 
     path = ARGV.first || File.expand_path("~/.brew_manifest")
 
