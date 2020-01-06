@@ -98,7 +98,7 @@ module Homebrew
             Dependency.prune
           end
         end
-      }.uniq
+      }.uniq.map(&:to_formula)
     end
 
     def run cmd
@@ -166,7 +166,7 @@ module Homebrew
       deps_cur = deps_for(leaves)
       deps_new = deps_for(leaves-pkgs_rm)
       deps_add = deps_new - deps_cur # TODO: remove?
-      deps_rm  = deps_cur - deps_new
+      deps_rm  = deps_cur - deps_new - leaves
 
       flags = Hash[formulas.map { |k,*v| [k, v] }]
       pkgs_add.each do |dep|
