@@ -12,6 +12,12 @@
 # commenting them so you have a record as to why, and everything else
 # is incidental to that manifest.
 
+# For reference:
+#
+# /usr/local/Homebrew/Library/Homebrew/formulary.rb
+# /usr/local/Homebrew/Library/Homebrew/formula.rb
+# /usr/local/Homebrew/Library/Homebrew/dependency.rb
+
 require "formula"
 require "tab"
 require "cmd/deps"
