@@ -127,8 +127,6 @@ module Homebrew
 
     def execute
       $-w = nil # HACK
-      manifest = lookup_formula
-
       all = Formula.installed
 
       installed_casks = nil
@@ -138,98 +136,99 @@ module Homebrew
 
       installed_taps = Tap.names
 
-      leaves = self.leaves manifest
-
-      deps = all - leaves
-
-      extra    = leaves - manifest
-      missing  = manifest - leaves
-
-      flags = Hash[formulas.map { |k,*v| [k, v] }]
-
-      deps_cur = deps_for(leaves)
-      deps_new = deps_for(leaves-extra)
-
-      deps_add = deps_new - deps_cur
-      deps_rm  = deps_cur - deps_new
-
       casks_add = casks - installed_casks
       casks_del = installed_casks - casks
 
       taps_add = taps - installed_taps
       taps_del = installed_taps - taps
 
-      if verbose then
-        pp :installed
-        pp all.map(&:name)
-        puts
-        pp :leaves
-        pp leaves.map(&:name)
-        puts
-        pp :manifest
-        pp manifest.map(&:name)
-        puts
-        pp :deps
-        pp deps.map(&:name)
-        puts
-        pp :extra
-        pp extra.map(&:name)
-        puts
-        pp :missing
-        pp missing.map(&:name)
-        puts
-        pp :add?
-        pp deps_add.map(&:name)
-
-        puts
-        pp :casks
-        puts
-        pp :add
-        pp casks_add
-        pp :del
-        pp casks_del
-
-        puts
-        pp :taps
-        puts
-        pp :add
-        pp taps_add
-        pp :del
-        pp taps_del
-      end
-
-      (extra + deps_rm).each do |dep|
-        cmd = "brew rm #{dep}"
-        run cmd
-      end
-
-      missing.each do |dep|
-        # TODO? Bundle::BrewInstaller.install dep.full_name, flags[dep.full_name]
-        args = (flags[dep.full_name] || []).map { |arg| "--#{arg}" }
-        cmd = "brew install #{dep} #{args.join " "}"
-        run cmd
-      end
-
-      casks_add.each do |cask|
-        cmd = "brew cask install #{cask}"
-        run cmd
-      end
-
-      casks_del.each do |cask|
-        cmd = "brew cask uninstall #{cask}"
-        run cmd
-      end
+      ## Install missing taps
 
       taps_add.each do |tap|
         cmd = "brew tap #{tap}"
         run cmd
       end
 
+      ## Install missing casks
+
+      casks_add.each do |cask|
+        cmd = "brew cask install #{cask}"
+        run cmd
+      end
+
+      ## Calculate and install missing formula
+
+      manifest = lookup_formula
+      leaves   = self.leaves manifest
+      deps     = all - leaves
+      pkgs_rm  = leaves - manifest
+      pkgs_add = manifest - leaves
+      deps_cur = deps_for(leaves)
+      deps_new = deps_for(leaves-pkgs_rm)
+      deps_add = deps_new - deps_cur # TODO: remove?
+      deps_rm  = deps_cur - deps_new
+
+      flags = Hash[formulas.map { |k,*v| [k, v] }]
+      pkgs_add.each do |dep|
+        # TODO? Bundle::BrewInstaller.install dep.full_name, flags[dep.full_name]
+        args = (flags[dep.full_name] || []).map { |arg| "--#{arg}" }
+        cmd = "brew install #{dep} #{args.join " "}"
+        run cmd
+      end
+
+      ## Remove extra pkgs
+
+      (pkgs_rm + deps_rm).each do |dep|
+        cmd = "brew rm #{dep}"
+        run cmd
+      end
+
+      ## Remove extra casks
+
+      casks_del.each do |cask|
+        cmd = "brew cask uninstall #{cask}"
+        run cmd
+      end
+
+      ## Remove extra taps
+
       taps_del.each do |tap|
         cmd = "brew untap #{tap}"
         run cmd
       end
+
+      ## Debugging output
+
+      if verbose then
+        pp :installed
+        pp all.map(&:name).sort
+        puts
+        pp :leaves
+        pp leaves.map(&:name).sort
+        puts
+        pp :manifest
+        pp manifest.map(&:name).sort
+        puts
+        pp :deps
+        pp deps.map(&:name).sort
+        puts
+        pp :pkgs_rm
+        pp pkgs_rm.map(&:name).sort
+        puts
+        pp :pkgs_add
+        pp pkgs_add.map(&:name).sort
+        puts
+        pp :add?
+        pp deps_add.map(&:name).sort
+
+        puts
+        pp :casks => { :add => casks_add, :del => casks_del }
+        puts
+        pp :taps => { :add => taps_add, :del => taps_del }
+      end
     end
+
+
   end
 
   def self.cook
