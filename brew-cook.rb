@@ -26,6 +26,7 @@ require "cask/all"
 module Homebrew
   class Manifest
     attr_accessor :taps, :formulas, :casks, :noop, :verbose
+    attr_accessor :warned
 
     def initialize noop = false
       self.taps     = []
@@ -33,6 +34,7 @@ module Homebrew
       self.casks    = []
       self.noop     = noop
       self.verbose  = false
+      self.warned   = false
     end
 
     def tap s
@@ -109,6 +111,8 @@ module Homebrew
 
     def run cmd
       if noop then
+        puts "# NOT executing. Run `brew cook -y` to execute:" unless warned
+        self.warned = true
         puts cmd
       else
         system cmd
