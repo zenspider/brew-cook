@@ -233,10 +233,12 @@ module Homebrew
   end
 
   def self.cook
-    noop = ARGV.delete("-n") # FIX: real processing
+    # FIX: real options processing
+    noop    = ARGV.delete("-n") || !ARGV.delete("-y")
     verbose = ARGV.delete("-v")
+    debug   = ARGV.delete("--debug")
 
-    ENV["HOMEBREW_DEBUG"]="1" if ARGV.delete("--debug")
+    ENV["HOMEBREW_DEBUG"]="1" if debug
 
     path = ARGV.first || File.expand_path("~/.brew_manifest")
 
