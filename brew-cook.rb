@@ -189,7 +189,7 @@ module Homebrew
       ## Remove extra pkgs
 
       (pkgs_rm + deps_rm).each do |dep|
-        cmd = "brew rm #{dep}"
+        cmd = "brew rm --ignore-dependencies #{dep}"
         run cmd
       end
 
