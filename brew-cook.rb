@@ -83,11 +83,7 @@ module Homebrew
 
     def lookup_formula
       formulas.map { |f, *|
-        if f.include?("/") || File.exist?(f)
-          Formulary.factory f
-        else
-          Formulary.find_with_priority f
-        end
+        Formulary.factory f
       }
     end
 
