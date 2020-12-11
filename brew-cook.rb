@@ -21,7 +21,6 @@
 require "formula"
 require "tab"
 require "cmd/deps"
-require "cask/all"
 
 module Homebrew
   class Manifest
