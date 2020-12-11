@@ -49,7 +49,7 @@ module Homebrew
     end
 
     def host *names
-      if names.include? `hostname -s`.chomp then
+      if names.flatten.include? `hostname -s`.chomp then
         yield
       end
     end
