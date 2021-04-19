@@ -157,7 +157,7 @@ module Homebrew
       ## Install missing casks
 
       casks_add.each do |cask|
-        cmd = "brew cask install #{cask}"
+        cmd = "brew install --cask #{cask}"
         run cmd
       end
 
@@ -191,7 +191,7 @@ module Homebrew
       ## Remove extra casks
 
       casks_del.each do |cask|
-        cmd = "brew cask uninstall #{cask}"
+        cmd = "brew uninstall --cask #{cask}"
         run cmd
       end
 
