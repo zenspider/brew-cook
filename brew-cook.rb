@@ -233,7 +233,9 @@ module Homebrew
       end
     end
 
-
+    def manifest
+      formulas.map { |f, *| Formulary.factory(f).full_name } + casks
+    end
   end
 
   def self.cook
@@ -241,6 +243,7 @@ module Homebrew
     noop    = ARGV.delete("-n") || !ARGV.delete("-y")
     verbose = ARGV.delete("-v")
     debug   = ARGV.delete("--debug")
+    cmd     = ARGV.shift || "execute"
 
     ENV["HOMEBREW_DEBUG"]="1" if debug
 
@@ -251,7 +254,15 @@ module Homebrew
     manifest = Manifest.new noop
     manifest.verbose = verbose if verbose
     manifest.instance_eval File.read(path), path
-    manifest.execute
+
+    case cmd
+    when "execute" then
+      manifest.execute
+    when "list" then
+      puts manifest.manifest
+    else
+      abort "Unknown command: #{cmd}"
+    end
   end
 end
 
