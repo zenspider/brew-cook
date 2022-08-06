@@ -14,9 +14,9 @@
 
 # For reference:
 #
-# /usr/local/Homebrew/Library/Homebrew/formulary.rb
-# /usr/local/Homebrew/Library/Homebrew/formula.rb
-# /usr/local/Homebrew/Library/Homebrew/dependency.rb
+# /opt/homebrew/Library/Homebrew/formulary.rb
+# /opt/homebrew/Library/Homebrew/formula.rb
+# /opt/homebrew/Library/Homebrew/dependency.rb
 
 require "formula"
 require "tab"
