@@ -52,7 +52,7 @@ module Homebrew
     end
 
     def host *names
-      if names.flatten.include? `hostname -s`.chomp.downcase then
+      if names.flatten.map(&:downcase).include? `hostname -s`.chomp.downcase then
         yield
       end
     end
