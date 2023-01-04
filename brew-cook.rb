@@ -25,10 +25,12 @@ require "cmd/deps"
 module Homebrew
   class Manifest
     attr_accessor :taps, :formulas, :casks, :noop, :verbose
+    attr_accessor :tap_repo
     attr_accessor :warned
 
     def initialize noop = false
       self.taps     = []
+      self.tap_repo = {}
       self.formulas = []
       self.casks    = []
       self.noop     = noop
@@ -36,7 +38,8 @@ module Homebrew
       self.warned   = false
     end
 
-    def tap s
+    def tap s, repo=nil
+      tap_repo[s] = repo if repo
       taps << s
     end
 
@@ -150,7 +153,8 @@ module Homebrew
       ## Install missing taps
 
       taps_add.each do |tap|
-        cmd = "brew tap #{tap}"
+        repo = tap_repo[tap]
+        cmd = "brew tap #{tap} #{repo}"
         run cmd
       end
 
