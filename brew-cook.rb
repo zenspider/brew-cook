@@ -142,7 +142,7 @@ module Homebrew
         installed_casks = Cask::Caskroom.casks.map(&:token)
       end
 
-      installed_taps = Tap.names
+      installed_taps = Tap.map(&:name).sort
 
       casks_add = casks - installed_casks
       casks_del = installed_casks - casks
